@@ -12,7 +12,13 @@ export class PostsComponent implements OnInit {
 
   constructor(private postsService: PostsService) { }
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.postsService.posts$.subscribe(
+      posts => this.posts = posts,
+      error => console.error(error),
+      () => console.log('getPosts completed')
+    );
+  }
 
   getPosts() {
     this.postsService.getPosts().subscribe(
@@ -22,10 +28,6 @@ export class PostsComponent implements OnInit {
     );
   }
   getPostsWithSubject() {
-    this.postsService.getPostsWithSubject().subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
+    this.postsService.getPostsWithSubject();
   }
 }

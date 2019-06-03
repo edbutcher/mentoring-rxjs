@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable, from, of, BehaviorSubject, pipe } from 'rxjs';
-import { mergeMap, switchMap, catchError } from 'rxjs/operators';
+import { mergeMap, switchMap, catchError, delay } from 'rxjs/operators';
 
 import { Post } from './post';
 
@@ -10,7 +10,7 @@ import { Post } from './post';
 })
 export class PostsService {
   private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
-  subject = new BehaviorSubject([]);
+  public posts$ = new BehaviorSubject([]);
   constructor() { }
 
   getPosts(): Observable<Post[]> {
@@ -20,12 +20,12 @@ export class PostsService {
     );
   }
 
-  getPostsWithSubject(): Observable<Post[]> {
-    this.getPosts().subscribe(posts => {
-      this.subject.next(posts)
-      console.log(posts);
-    });
-    return this.subject.asObservable();
+  getPostsWithSubject(): void {
+    this.getPosts()
+      .pipe(
+        switchMap(() => this.getPosts())
+      )
+      .subscribe(posts => this.posts$.next(posts));
   }
 
   private handleError<T> (operation = 'operation', result?: T) {
