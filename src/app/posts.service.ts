@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable, from, of, BehaviorSubject, pipe } from 'rxjs';
-import { mergeMap, switchMap, catchError, delay } from 'rxjs/operators';
+import { mergeMap, switchMap, catchError, filter, map, flatMap } from 'rxjs/operators';
 
 import { Post } from './post';
 
@@ -26,6 +26,16 @@ export class PostsService {
         switchMap(() => this.getPosts())
       )
       .subscribe(posts => this.posts$.next(posts));
+  }
+
+  searchPosts(term: string): Observable<Post[]> {
+    if (!term.trim()) return of([]);
+
+    return this.getPosts().pipe(
+      flatMap(data => data.body),
+      filter(value => value.body.include(term)),
+      catchError(this.handleError<Post[]>('searchPosts', []))
+    );
   }
 
   private handleError<T> (operation = 'operation', result?: T) {
