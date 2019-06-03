@@ -11,18 +11,12 @@ import { PostsService } from '../posts.service'
   styleUrls: ['./posts.component.scss']
 })
 export class PostsComponent implements OnInit {
-  posts: Post[];
   posts$: Observable<Post[]>;
   private searchTerms = new Subject<string>();
 
   constructor(private postsService: PostsService) { }
 
   ngOnInit(): void {
-    this.postsService.posts$.subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
     this.posts$ = this.searchTerms.pipe(
       debounceTime(1000),
       distinctUntilChanged(),
@@ -30,19 +24,7 @@ export class PostsComponent implements OnInit {
     );
   }
 
-  getPosts() {
-    this.postsService.getPosts().subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
-  }
-
-  getPostsWithSubject() {
-    this.postsService.getPostsWithSubject();
-  }
-
   search(term): void {
-    this.searchTerms.next(term);
+    this.searchTerms.next(term.toLowerCase());
   }
 }

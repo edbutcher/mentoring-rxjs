@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Observable, from, of, BehaviorSubject, pipe } from 'rxjs';
-import { mergeMap, switchMap, catchError, filter, map, flatMap } from 'rxjs/operators';
+import { mergeMap, switchMap, catchError, filter, map, tap } from 'rxjs/operators';
 
 import { Post } from './post';
 
@@ -32,9 +32,7 @@ export class PostsService {
     if (!term.trim()) return of([]);
 
     return this.getPosts().pipe(
-      flatMap(data => data.body),
-      filter(value => value.body.include(term)),
-      catchError(this.handleError<Post[]>('searchPosts', []))
+      map(arr => arr.filter(item => item.body.includes(term)))
     );
   }
 
