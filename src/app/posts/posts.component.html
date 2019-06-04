@@ -1,7 +1,9 @@
 <h2>Posts list</h2>
 
+<button (click)="getPostsWithSubject()">Load users</button>
+
 <div *ngIf="posts" >
-  <div *ngFor="let post of posts | async">
+  <div *ngFor="let post of posts">
     <h3>{{post.id}}. {{post.title | titlecase}}</h3>
     <p>{{post.body}}</p>
     <span>posted by user #{{post.userId}}</span>

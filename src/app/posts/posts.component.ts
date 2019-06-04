@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable, from } from 'rxjs';
+import { Observable, from, Subject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { Post } from '../post';
 
@@ -10,12 +11,22 @@ import { Post } from '../post';
 })
 export class PostsComponent implements OnInit {
   private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
-  posts: Observable<Post[]>;
+  posts: Post[];
+  buttonSubject$ = new Subject();
 
   constructor() { }
 
   ngOnInit() {
-    this.posts = this.getPosts();
+    this.buttonSubject$.next(this.getPosts().pipe(
+      switchMap(sourceValue => {
+          console.log(sourceValue);
+          return this.getPosts();
+      }),
+    ).subscribe(
+      event => this.posts = event,
+      error => console.log(error),
+      () => console.log('Done')
+    ));
   }
 
   getPosts() {
@@ -24,5 +35,10 @@ export class PostsComponent implements OnInit {
         .then(response => response.json())
         .then(responseJson => responseJson)
     )
+  }
+
+  getPostsWithSubject() {
+    console.log(this.posts);
+    this.buttonSubject$.next(this.getPosts());
   }
 }
