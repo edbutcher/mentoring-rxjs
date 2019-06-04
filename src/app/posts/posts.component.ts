@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { Observable, from } from 'rxjs';
+
 import { Post } from '../post';
-import { PostsService } from '../posts.service';
 
 @Component({
   selector: 'app-posts',
@@ -8,24 +9,20 @@ import { PostsService } from '../posts.service';
   styleUrls: ['./posts.component.scss']
 })
 export class PostsComponent implements OnInit {
-  posts: Post[];
+  private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
+  posts: Observable<Post[]>;
 
-  constructor(private postsService: PostsService) { }
+  constructor() { }
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.posts = this.getPosts();
+  }
 
   getPosts() {
-    this.postsService.getPosts().subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
-  }
-  getPostsWithSubject() {
-    this.postsService.getPostsWithSubject().subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
+    return from(
+      fetch(this.postsUrl)
+        .then(response => response.json())
+        .then(responseJson => responseJson)
+    )
   }
 }
