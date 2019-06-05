@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { Observable, from, Subject } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
+
 import { Post } from '../post';
-import { PostsService } from '../posts.service';
 
 @Component({
   selector: 'app-posts',
@@ -8,15 +10,34 @@ import { PostsService } from '../posts.service';
   styleUrls: ['./posts.component.scss']
 })
 export class PostsComponent implements OnInit {
+  private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
   posts: Post[];
+  buttonSubject$: Subject<Post[]> = new Subject();
 
-  constructor(private postsService: PostsService) { }
+  constructor() { }
 
   ngOnInit() {
-    this.getPosts();
+    this.buttonSubject$.pipe(
+      switchMap(() => this.getPosts()),
+      tap(value => console.log(value)),
+    ).subscribe(
+      event => this.posts = event,
+      error => console.log(error),
+      () => console.log('Done')
+    );
+
+    this.buttonSubject$.next();
   }
 
   getPosts() {
-    this.postsService.getPosts().subscribe(posts => this.posts = posts);
+    return from(
+      fetch(this.postsUrl)
+        .then(response => response.json())
+        .then(responseJson => responseJson)
+    )
+  }
+
+  getPostsWithSubject() {
+    this.buttonSubject$.next();
   }
 }
