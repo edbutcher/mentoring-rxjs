@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { Observable, from, Subject } from 'rxjs';
+import { switchMap, tap, debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
 
 import { Post } from '../post';
-import { PostsService } from '../posts.service'
 
 @Component({
   selector: 'app-posts',
@@ -11,38 +10,56 @@ import { PostsService } from '../posts.service'
   styleUrls: ['./posts.component.scss']
 })
 export class PostsComponent implements OnInit {
+  private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
   posts: Post[];
-  posts$: Observable<Post[]>;
-  private searchTerms = new Subject<string>();
+  postsSubject$ = new Subject();
+  inputSubject$ = new Subject();
 
-  constructor(private postsService: PostsService) { }
+  constructor() { }
 
-  ngOnInit(): void {
-    this.postsService.posts$.subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
+  ngOnInit() {
+    this.postsSubject$.pipe(
+      switchMap(value => {
+        if(value) {
+          return this.getPosts().pipe(
+            map(posts => 
+              posts.filter(post => post.body.includes(''+ value))
+          ));
+        } else {
+          return this.getPosts();
+        }
+      }),
+      tap(_ => console.log(_)),
+    ).subscribe(
+      event => this.posts = event,
+      error => console.log(error),
+      () => console.log('Done')
     );
-    this.posts$ = this.searchTerms.pipe(
+    this.inputSubject$.pipe(
       debounceTime(1000),
       distinctUntilChanged(),
-      switchMap((term: string) => this.postsService.searchPosts(term)),
+      tap(_ => console.log(_)),
+    ).subscribe(
+      event => this.postsSubject$.next(event),
+      error => console.log(error),
+      () => console.log('Input')
     );
+    this.postsSubject$.next();
   }
 
-  getPosts() {
-    this.postsService.getPosts().subscribe(
-      posts => this.posts = posts,
-      error => console.error(error),
-      () => console.log('getPosts completed')
-    );
+  getPosts(): Observable<Post[]> {
+    return from(
+      fetch(this.postsUrl)
+        .then(response => response.json())
+        .then(responseJson => responseJson)
+    )
   }
 
   getPostsWithSubject() {
-    this.postsService.getPostsWithSubject();
+    this.postsSubject$.next();
   }
 
-  search(term): void {
-    this.searchTerms.next(term);
+  search(term: string): void {
+    this.inputSubject$.next(term);
   }
 }
