@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable, from, Subject } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
 
 import { Post } from '../post';
 
@@ -12,24 +12,42 @@ import { Post } from '../post';
 export class PostsComponent implements OnInit {
   private postsUrl = 'https://jsonplaceholder.typicode.com/posts';
   posts: Post[];
-  buttonSubject$: Subject<Post[]> = new Subject();
+  postsSubject$ = new Subject();
+  inputSubject$ = new Subject();
 
   constructor() { }
 
   ngOnInit() {
-    this.buttonSubject$.pipe(
-      switchMap(() => this.getPosts()),
-      tap(value => console.log(value)),
+    this.postsSubject$.pipe(
+      switchMap(value => {
+        if(value) {
+          return this.getPosts().pipe(
+            map(posts => 
+              posts.filter(post => post.body.includes(''+ value))
+          ));
+        } else {
+          return this.getPosts();
+        }
+      }),
+      tap(_ => console.log(_)),
     ).subscribe(
       event => this.posts = event,
       error => console.log(error),
       () => console.log('Done')
     );
-
-    this.buttonSubject$.next();
+    this.inputSubject$.pipe(
+      debounceTime(1000),
+      distinctUntilChanged(),
+      tap(_ => console.log(_)),
+    ).subscribe(
+      event => this.postsSubject$.next(event),
+      error => console.log(error),
+      () => console.log('Input')
+    );
+    this.postsSubject$.next();
   }
 
-  getPosts() {
+  getPosts(): Observable<Post[]> {
     return from(
       fetch(this.postsUrl)
         .then(response => response.json())
@@ -38,6 +56,10 @@ export class PostsComponent implements OnInit {
   }
 
   getPostsWithSubject() {
-    this.buttonSubject$.next();
+    this.postsSubject$.next();
+  }
+
+  search(term: string): void {
+    this.inputSubject$.next(term);
   }
 }
